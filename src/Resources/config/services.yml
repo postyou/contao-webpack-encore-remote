@@ -1,0 +1,15 @@
+services:
+    _instanceof:
+        Contao\CoreBundle\Framework\FrameworkAwareInterface:
+            calls:
+                - ["setFramework", ["@contao.framework"]]
+
+        Symfony\Component\DependencyInjection\ContainerAwareInterface:
+            calls:
+                - ["setContainer", ["@service_container"]]
+
+    postyou.listener.page_listener:
+        class: Postyou\WebpackEncoreRemoteBundle\EventListener\PageListener
+        tags:
+            - { name: contao.hook, hook: generatePage}
+        public: true
