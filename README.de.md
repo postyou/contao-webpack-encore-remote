@@ -1,3 +1,5 @@
+[![](https://img.shields.io/maintenance/yes/2019.svg)](https://github.com/postyou/contao-webpack-encore-remote-bundle)
+
 # Contao Webpack-Encore Remote Bundle
 
 Dieses Bundle ermöglicht die Nutzung von Webpack-Encore unkompliziert und schnell direkt in Contao. 
