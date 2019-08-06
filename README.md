@@ -1,3 +1,5 @@
+[zur deutschen Version wechseln](README.de.md)
+
 # Contao Webpack-Encore Remote Bundle
 
 This bundle enables the use of Webpack Encore easily and quickly directly in Contao.
