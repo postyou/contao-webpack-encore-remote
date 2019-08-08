@@ -12,7 +12,10 @@ class PageListener implements ContainerAwareInterface
 
     public function onGeneratePage($objPage, $objLayout, $objPageRegular) {
         $arrEntries = array_unique($this->findEncoreEntries($objPage, array()));
+
         $buildPath = \FilesModel::findByUuid(\Config::get('buildFolder'))->path;
+
+
         $entryPoints = new \File($buildPath.'/entrypoints.json');
 
         if ($entryPoints->exists()) {
@@ -25,11 +28,11 @@ class PageListener implements ContainerAwareInterface
                 foreach ($entryPointsArr['entrypoints'][$model->name] as $key => $file) {
                     if ($key == 'js') {
                         foreach ($file as $jsFile) {
-                            $GLOBALS['TL_JAVASCRIPT'][] = 'files/'.$jsFile;
+                            $GLOBALS['TL_JAVASCRIPT'][] = $buildPath.substr($jsFile, strrpos($jsFile, '/'));
                         }
                     } else if ($key == 'css') {
                         foreach ($file as $cssFile) {
-                            $GLOBALS['TL_CSS'][] = 'files/'.$cssFile;
+                            $GLOBALS['TL_CSS'][] = $buildPath.substr($cssFile, strrpos($cssFile, '/'));
                         }
                     }
                 }

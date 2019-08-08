@@ -30,91 +30,86 @@ class Converter extends \Backend
     public function doConversion($withRedirect = true)
     {
 
-//        if (\Input::post('FORM_SUBMIT') == 'encore-convert') {
+        $authData = [\Config::get('username'), \Config::get('password')];
+        $key = str_replace('=', '', base64_encode($authData[0].':'.$authData[1]));
 
-            $authData = [\Config::get('username'), \Config::get('password')];
-//            $config = $this->createMultiPartArr($authData);
+        $client = new Client([
+            'base_uri' => 'https://webpack.postyou.de',
+        ]);
 
-            $client = new Client([
-                'base_uri' => 'https://webpack.postyou.de',
+        $buildFolder = TL_ROOT. '/' .\FilesModel::findByUuid(\Config::get('buildFolder'))->path;
+
+        $fp = fopen( $buildFolder . '/build.zip','w');
+
+
+
+        $response = NULL;
+        try {
+            $mode = 'dev';
+            if (!empty(\Config::get('webpack-encore-mode'))) {
+                $mode = \Config::get('webpack-encore-mode');
+            }
+
+            $response = $client->request('POST', '/runwithconfig/' . $mode, [
+                RequestOptions::AUTH => $authData,
+                RequestOptions::MULTIPART =>
+                    $this->createMultiPartArr($key)
+
             ]);
 
-            $buildFolder = TL_ROOT. '/' .\FilesModel::findByUuid(\Config::get('buildFolder'))->path;
+            $response = $client->request('GET', '/getbuildzip/', [
+                RequestOptions::AUTH => $authData,
+                RequestOptions::SINK => $fp
+            ]);
 
+            if ($withRedirect) {
+                \Controller::redirect(\Controller::addToUrl('fine=1',true,array('key', 'error')));
+            }
 
-            $fp = fopen( $buildFolder . '/build.zip','w');
+        } catch (RequestException $e) {
+            $logger = \System::getContainer()->get('monolog.logger.contao');
+            $exceptionContent = $e->getResponse()->getBody()->getContents();
+            $logger->error($exceptionContent);
+            $logger
+                ->log(LogLevel::ERROR, $exceptionContent, array(
+                    'contao' => new ContaoContext(__CLASS__.'::'.__FUNCTION__, TL_ERROR
+                    )));
 
+            if ($withRedirect) {
+                \Controller::redirect(\Controller::addToUrl('error=1',true,array('key', 'fine')));
+            }
 
-
-            $response = NULL;
-            try {
-                $mode = 'dev';
-                if (!empty(\Config::get('webpack-encore-mode'))) {
-                    $mode = \Config::get('webpack-encore-mode');
+        } finally {
+            fclose($fp);
+            $zip = new ZipArchive();
+            if ($zip->open($buildFolder . '/build.zip') === TRUE) {
+                $directoryIterator = new RecursiveDirectoryIterator( $buildFolder, FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS );
+                foreach( new RecursiveIteratorIterator($directoryIterator,  RecursiveIteratorIterator::CHILD_FIRST ) as $value ) {
+                    $value->isFile() ? unlink( $value ) : rmdir( $value );
                 }
 
-                $response = $client->request('POST', '/runwithconfig/' . $mode, [
-                    RequestOptions::AUTH => $authData,
-                    RequestOptions::MULTIPART =>
-                        $this->createMultiPartArr($authData)
+                $zip->extractTo( $buildFolder);
+                $zip->close();
+                if (file_exists($buildFolder . '/build.zip')) {
+                    unlink($buildFolder . '/build.zip');
+                }
 
-                ]);
+                if (file_exists(TL_ROOT.'/files_to_build.zip')) {
+                    unlink(TL_ROOT.'/files_to_build.zip');
+                }
 
-                $response = $client->request('GET', '/getbuildzip/', [
-                    RequestOptions::AUTH => $authData,
-                    RequestOptions::SINK => $fp
-                ]);
-
+            } else {
                 if ($withRedirect) {
-                    \Controller::redirect(\Controller::addToUrl('fine=1',true,array('key', 'error')));
-                }
-
-            } catch (RequestException $e) {
-                $logger = \System::getContainer()->get('monolog.logger.contao');
-                $exceptionContent = $e->getResponse()->getBody()->getContents();
-                $logger->error($exceptionContent);
-                $logger
-                    ->log(LogLevel::ERROR, $exceptionContent, array(
-                        'contao' => new ContaoContext(__CLASS__.'::'.__FUNCTION__, TL_ERROR
-                        )));
-
-                if ($withRedirect) {
-                    \Controller::redirect(\Controller::addToUrl('error=1',true,array('key', 'fine')));
-                }
-
-            } finally {
-
-                fclose($fp);
-                $zip = new ZipArchive();
-                if ($zip->open($buildFolder . '/build.zip') === TRUE) {
-                    $directoryIterator = new RecursiveDirectoryIterator( $buildFolder, FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS );
-                    foreach( new RecursiveIteratorIterator($directoryIterator,  RecursiveIteratorIterator::CHILD_FIRST ) as $value ) {
-                        $value->isFile() ? unlink( $value ) : rmdir( $value );
-                    }
-                    $zip->extractTo( $buildFolder);
-                    $zip->close();
-                    if (file_exists($buildFolder . '/build.zip')) {
-                        unlink($buildFolder . '/build.zip');
-                    }
-
-                    if (file_exists(TL_ROOT.'/files_to_build.zip')) {
-                        unlink(TL_ROOT.'/files_to_build.zip');
-                    }
-
-
-
-                } else {
-                    if ($withRedirect) {
-                        \Controller::redirect(\Controller::addToUrl('error', true, array('key', 'fine')));
-                    }
+                    \Controller::redirect(\Controller::addToUrl('error', true, array('key', 'fine')));
                 }
             }
+        }
 
     }
 
-    private function createMultiPartArr($authData) {
+    private function createMultiPartArr($key) {
         $models = EncoreEntryModel::findAll();
-        $key = str_replace('=', '', base64_encode($authData[0].':'.$authData[1]));
+
 
         $multiPartArr = [];
 
@@ -124,7 +119,7 @@ class Converter extends \Backend
             var Encore = require("@symfony/webpack-encore");
             Encore
             .setOutputPath("'.$key.'/build/")
-            .setPublicPath("'.$key.'/build")'
+            .setPublicPath("/'.$key.'/build")'
         );
 
         while ($models->next()) {
@@ -138,7 +133,7 @@ class Converter extends \Backend
                 .enableSourceMaps(!Encore.isProduction())
                 .enableVersioning(Encore.isProduction())
                 .enablePostCssLoader();';
-            $configStr .= trim(preg_replace('/[^\S\r\n]/', '', $defaultStr));
+            $configStr .= trim(preg_replace('/[^\S\r\n]/m', '', $defaultStr));
         } else {
             $configStr .= \Config::get('extendedWebpackEncoreConfiguration');
         }
