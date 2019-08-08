@@ -1,3 +1,5 @@
+[![](https://img.shields.io/maintenance/yes/2019.svg)](https://github.com/postyou/contao-webpack-encore-remote-bundle)
+
 [zur deutschen Version wechseln](README.de.md)
 
 # Contao Webpack-Encore Remote Bundle
