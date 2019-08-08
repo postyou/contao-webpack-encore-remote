@@ -85,7 +85,8 @@ class Converter extends \Backend
             if ($zip->open($buildFolder . '/build.zip') === TRUE) {
                 $directoryIterator = new RecursiveDirectoryIterator( $buildFolder, FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS );
                 foreach( new RecursiveIteratorIterator($directoryIterator,  RecursiveIteratorIterator::CHILD_FIRST ) as $value ) {
-                    $value->isFile() ? unlink( $value ) : rmdir( $value );
+                    if (strpos($value, '.public') !== false)
+                        $value->isFile() ? unlink( $value ) : rmdir( $value );
                 }
 
                 $zip->extractTo( $buildFolder);
