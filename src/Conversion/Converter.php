@@ -4,6 +4,7 @@
 namespace Postyou\WebpackEncoreRemoteBundle\Conversion;
 
 use Contao\CoreBundle\Monolog\ContaoContext;
+use FilesystemIterator;
 use Psr\Log\LogLevel;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -86,7 +87,10 @@ class Converter extends \Backend
                 fclose($fp);
                 $zip = new ZipArchive();
                 if ($zip->open($buildFolder . '/build.zip') === TRUE) {
-                    array_map('unlink', array_filter((array) glob($buildFolder.'/*')));
+                    $directoryIterator = new RecursiveDirectoryIterator( $buildFolder, FilesystemIterator::SKIP_DOTS | FilesystemIterator::UNIX_PATHS );
+                    foreach( new RecursiveIteratorIterator($directoryIterator,  RecursiveIteratorIterator::CHILD_FIRST ) as $value ) {
+                        $value->isFile() ? unlink( $value ) : rmdir( $value );
+                    }
                     $zip->extractTo( $buildFolder);
                     $zip->close();
                     if (file_exists($buildFolder . '/build.zip')) {

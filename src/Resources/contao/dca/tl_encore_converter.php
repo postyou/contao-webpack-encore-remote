@@ -59,6 +59,9 @@ $GLOBALS['TL_DCA']['tl_encore_converter'] = array
             'exclude'                 => true,
             'inputType'               => 'text',
             'eval'                    => array( 'tl_class'=>'w50'),
+            'save_callback'           => array(function($value) {
+                return html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8') ;
+            }),
             'sql'                     => "varchar(255) NOT NULL default ''"
         ),
         'password' => array
@@ -67,6 +70,9 @@ $GLOBALS['TL_DCA']['tl_encore_converter'] = array
             'exclude'                 => true,
             'inputType'               => 'text',
             'eval'                    => array( 'tl_class'=>'w50'),
+            'save_callback'           => array(function($value) {
+                return html_entity_decode($value, ENT_QUOTES | ENT_XML1, 'UTF-8') ;
+            }),
             'sql'                     => "varchar(255) NOT NULL default ''"
         ),
         'extendedWebpackEncoreConfiguration' => array
@@ -76,14 +82,14 @@ $GLOBALS['TL_DCA']['tl_encore_converter'] = array
             'inputType'               => 'textarea',
             'eval'                    => array('allowHtml'=>true, 'class'=>'monospace', 'rte'=>'ace'),
             'load_callback'           => array(function($value, $dc) {
-if (empty($value)) {
-    return '.enableSingleRuntimeChunk()
-.cleanupOutputBeforeBuild()
-.enableSourceMaps(!Encore.isProduction())
-.enableVersioning(Encore.isProduction())
-.enablePostCssLoader();';
+                                            if (empty($value)) {
+                                                return trim('.enableSingleRuntimeChunk()
+                                                    .cleanupOutputBeforeBuild()
+                                                    .enableSourceMaps(!Encore.isProduction())
+                                                    .enableVersioning(Encore.isProduction())
+                                                    .enablePostCssLoader();');
                                             }
-return $value;
+                                            return $value;
                                         }),
             'sql'                     => "mediumtext NULL"
         ),
