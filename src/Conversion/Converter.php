@@ -133,12 +133,12 @@ class Converter extends \Backend
         }
 
         if (empty(\Config::get('extendedWebpackEncoreConfiguration'))) {
-            $configStr .= trim(
-            '.enableSingleRuntimeChunk()
+            $defaultStr = '.enableSingleRuntimeChunk()
                 .cleanupOutputBeforeBuild()
                 .enableSourceMaps(!Encore.isProduction())
                 .enableVersioning(Encore.isProduction())
-                .enablePostCssLoader();');
+                .enablePostCssLoader();';
+            $configStr .= trim(preg_replace('/[^\S\r\n]/', '', $defaultStr));
         } else {
             $configStr .= \Config::get('extendedWebpackEncoreConfiguration');
         }

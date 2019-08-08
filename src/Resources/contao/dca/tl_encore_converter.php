@@ -82,15 +82,16 @@ $GLOBALS['TL_DCA']['tl_encore_converter'] = array
             'inputType'               => 'textarea',
             'eval'                    => array('allowHtml'=>true, 'class'=>'monospace', 'rte'=>'ace'),
             'load_callback'           => array(function($value, $dc) {
-                                            if (empty($value)) {
-                                                return trim('.enableSingleRuntimeChunk()
+                if (empty($value)) {
+                    return trim(preg_replace('/[^\S\r\n]/m', '', '
+                                                    .enableSingleRuntimeChunk()
                                                     .cleanupOutputBeforeBuild()
                                                     .enableSourceMaps(!Encore.isProduction())
                                                     .enableVersioning(Encore.isProduction())
-                                                    .enablePostCssLoader();');
-                                            }
-                                            return $value;
-                                        }),
+                                                    .enablePostCssLoader();'));
+                }
+                return $value;
+            }),
             'sql'                     => "mediumtext NULL"
         ),
         'assetsFolder' => array
